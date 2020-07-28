@@ -213,10 +213,8 @@ jobs:
   # The Main "Build" job. It pulls in assets from previous jobs (the built api docs, pdfs and javascript)
   # and puts everything in its place for a Jekyll build.
   build:
-    executor:
-      name: ruby/default
-      tag: '2.6.3-node-browsers'
-
+    machine:
+      image: ubuntu-1604:202007-01
     working_directory: ~/circleci-docs
     environment:
       JEKYLL_ENV: production
