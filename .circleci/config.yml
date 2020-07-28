@@ -80,43 +80,6 @@ workflows:
             - build_server_pdfs
             - build_api_docs
             - build_config_ref
-      - reindex-search:
-          requires:
-            - build
-          filters:
-            branches:
-              only: master
-      - deploy:
-          requires:
-            - build
-          filters:
-            branches:
-              only: master
-
-  # We run a nightly build for running build/maintenance tasks
-  # such as pulling in docker image tags or automating our api documentation
-  nightly-build:
-    triggers:
-      - schedule:
-          cron: "0 8 * * *"
-          filters:
-            branches:
-              only: master
-    jobs:
-      - js_build
-      - build_api_docs
-      - build_config_builder
-      - build_config_ref
-      - build:
-          requires:
-            - js_build
-            - build_api_docs
-            - build_config_builder
-            - build_config_ref
-      - deploy:
-          requires:
-            - build
-
 
 jobs:
   js_build: # this job is responsible for building Javascript assets and making them available for the "build" job
@@ -263,12 +226,8 @@ jobs:
       - checkout
       - install-shared-assets
       - *attach_workspace
-      - md-proofer/install:
-          version: "0.3.0"
-      - run:
-          name: "Test Markdown Files"
-          command: md-proofer lint jekyll/_cci2/ jekyll/_api/ jekyll/_cci1/
       - ruby-deps
+      - run: docker-compose -d up
       - run:
           name: Create results directory
           command: mkdir -p $JOB_RESULTS_PATH
@@ -316,33 +275,3 @@ jobs:
           root: ~/circleci-docs/jekyll/_site
           paths:
             - docs
-
-  reindex-search:
-    executor:
-      name: ruby/default
-      tag: '2.6.3-node-browsers'
-    working_directory: ~/circleci-docs
-    environment:
-      JEKYLL_ENV: production
-    steps:
-      - checkout
-      - install-shared-assets
-      - *attach_workspace
-      - restore_cache:
-          key: circleci-docs-{{ .Branch }}-{{ checksum "Gemfile.lock" }}
-      - ruby-deps
-      - run:
-          name: Update Algolia Index
-          command: |
-            ALGOLIA_API_KEY=$ALGOLIA_PRIVATE_KEY bundle exec jekyll algolia --source jekyll --config jekyll/_config.yml
-
-  deploy:
-    docker:
-      - image: cibuilds/aws:1.16.185
-    steps:
-      - attach_workspace:
-          at: ./generated-site
-      - run:
-          name: Deploy to S3 if tests pass and branch is Master
-          command: aws s3 sync generated-site/docs s3://circle-production-static-site/docs/ --delete
-
