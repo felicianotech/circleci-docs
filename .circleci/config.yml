@@ -223,9 +223,9 @@ jobs:
     steps:
       - checkout
       - install-shared-assets
+      - run: docker-compose -d up
       - *attach_workspace
       - ruby-deps
-      - run: docker-compose -d up
       - run:
           name: Create results directory
           command: mkdir -p $JOB_RESULTS_PATH
