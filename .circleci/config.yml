@@ -104,26 +104,6 @@ workflows:
           filters:
             branches:
               only: master
-  # We run a nightly build for running build/maintenance tasks
-  # such as pulling in docker image tags or automating our api documentation
-  nightly-build:
-    triggers:
-      - schedule:
-          cron: "0 8 * * *"
-          filters:
-            branches:
-              only: master
-    jobs:
-      - js_build
-      - build_api_docs
-      - build:
-          requires:
-            - js_build
-            - build_api_docs
-      - deploy:
-          requires:
-            - build
-
 
 jobs:
   js_build: # this job is responsible for building Javascript assets and making them available for the "build" job
